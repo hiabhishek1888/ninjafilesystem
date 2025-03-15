@@ -1,0 +1,10 @@
+1.  implement handshake function when 2 peer connects                   [in p2p.handshakeandpeercheck]
+
+2.  implement snapshot feature..                                        [in storage.go]
+    // TODO:
+	// CAS feature support.. no duplication !!
+	// current implementation is overwriting the existing data if we give the same path
+	// but in CAS, it create a new file and leave the existing one as it is.
+	// RECOVERY => this supports to take snapshot and act as backup points if data is lost..
+
+3.  

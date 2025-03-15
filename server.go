@@ -11,10 +11,6 @@ import (
 	"github.com/intogit/ninjafilesystem/p2p"
 )
 
-//	type FileServerOpts struct {
-//		PathTransform PathTransformHandler
-//		Transport     p2p.TCPTransport
-//	}
 type FileServer struct {
 	transport      *p2p.TCPTransport
 	store          *Store
@@ -25,31 +21,31 @@ type FileServer struct {
 	peers    map[string]p2p.Peer
 }
 
+// Adding all "connected peer n/w" in peer map for a single machine/device
 func (s *FileServer) OnPeer(p p2p.Peer) error {
 	s.peerLock.Lock()
 	defer s.peerLock.Unlock()
 	s.peers[p.RemoteAddr().String()] = p
 
-	log.Printf("peer local address is: %s and remote address is: %s", s.transport.ListenAddress, p.RemoteAddr().String())
+	// log.Printf("peer local address is: %s and remote address is: %s", s.transport.ListenAddress, p.RemoteAddr().String())
 	return nil
 }
 
-var readdata io.Reader = nil
-var readdataerr error = nil
-var recievedData = make(chan bool)
+var readdata io.Reader
+var readdataerr error
+var recievedData (chan bool)
 
 func (s *FileServer) RecievePathAndReturnData() {
 	defer s.transport.CloseConnection()
 	for {
-		// fmt.Println("hey, i am here !!")
+		fmt.Println("hey there, RecievePathAndReturnData is active !!")
 		select {
 		case path := <-s.transport.ConsumePath():
 			addr := s.transport.TCPTransportOptions.ListenAddress
 			if s.store.HasPath(addr, path) {
 				readdata, readdataerr = s.store.Read(addr, path)
 			}
-			// fmt.Println("readdata is: ", readdata)
-			// time.Sleep(10 * time.Second)
+			fmt.Printf("%s remote node data returned/saved, recieved over channel \n", addr)
 			recievedData <- true
 		case <-s.quitchannel:
 			return
@@ -58,40 +54,22 @@ func (s *FileServer) RecievePathAndReturnData() {
 }
 
 func (s *FileServer) RecieveDataAndStore() {
-	// addr := s.transport.TCPTransportOptions.ListenAddress
 	defer s.transport.CloseConnection()
 	for {
+		fmt.Println("hey there, RecieveDataAndStore is active !!")
 		select {
 		case msg := <-s.transport.ConsumePayload():
-			// var p p2p.Payload
-			// err := s.transport.Decoder.Decode(bytes.NewReader(msg.Payload), &p)
-			// if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
-			// 	log.Fatal(err)
-			// }
-			// if err := gob.NewDecoder(bytes.NewReader(msg.Data)).Decode(&p); err != nil {
-			// 	log.Fatal(err)
-			// }
-
-			// fmt.Println("msge is: \n", msg)
-			// fmt.Printf("decoded path: is %+v \n", string(msg.Path))
-			// fmt.Printf("decoded data: is %+v \n", string(msg.Data))
-
 			addr := s.transport.TCPTransportOptions.ListenAddress
 			if err := s.store.Write(addr, msg.Path, bytes.NewReader(msg.Data)); err != nil {
 				log.Panic(err)
 			}
-
-			fmt.Printf("%s node data stored the recieved data \n", addr)
-
-			// peer := &p2p.TCPPeer{}
-			// peer.GetPeerforWaitGroup().Wg.Done()
-			// peer.WgDone()
-
+			fmt.Printf("%s remote node data stored, recieved over channel from  \n", addr)
 		case <-s.quitchannel:
 			return
 		}
 	}
 }
+
 func (s *FileServer) bootstrapNetwork() error {
 	for _, addr := range s.bootstrapNodes {
 		if len(addr) == 0 {
@@ -120,22 +98,19 @@ func (s *FileServer) StartConn(wg *sync.WaitGroup) error {
 	return nil
 }
 
-// type Payload struct {
-// 	Path string
-// 	Data []byte
-// }
-
 func (s *FileServer) gatherData(path string) error {
 	p := p2p.Payload{
 		Path: path,
 		Data: nil,
 	}
 	// p := []byte(path)
-	peers := []io.Writer{}
+	peers := []io.Writer{} // peer should implement Writer to send the data over the network
 	for _, peer := range s.peers {
 		peers = append(peers, peer)
 	}
+	// Sending path to each peer...
 	for _, peer := range peers {
+		// Will encode the data in gob format and send over the network
 		if err := gob.NewEncoder(peer).Encode(p); err != nil {
 			return err
 		}
@@ -143,55 +118,59 @@ func (s *FileServer) gatherData(path string) error {
 	return nil
 }
 func (s *FileServer) GetData(path string) (io.Reader, error) {
-	// checking if file path exist on our disk, if yes then we return Read
+	// 1. Check if file path exist on requestor disk, if yes then we return Read data
+	// 2. else, Requesting peers to check and share the file if the file exist with them.
+
 	// var wg sync.WaitGroup
 	// wg.Add(1)
 	// go s.RecievePathAndReturnData(&wg)
-
 	// go s.RecievePathAndReturnData()
-	// time.Sleep(5 * time.Second)
+	// WAIT GROUP IS NOT WORKING INSIDE THE RecievePathAndReturnData
 
+	fmt.Println("GetData initiated for path ", path)
+	// initialising the global variables, helps to get the data and wait till data recieved
+	readdata = nil                 // recieve the data
+	readdataerr = nil              // recieve error, if any
+	recievedData = make(chan bool) // wait till data is consumed from channel and written to above vars.
+
+	// 1. checking file locally
 	addr := s.transport.TCPTransportOptions.ListenAddress
 	if s.store.HasPath(addr, path) {
 		return s.store.Read(addr, path)
 	}
-	fmt.Printf("we do not have the file (%s) locally, fetching from peer networks \n", path)
+	fmt.Printf("(%s) file do not exist locally, fetching from peer networks \n", path)
 
-	// Requesting peers to check and share the file, if they have.
+	// 2. Requesting peers to share the file, if they have.
 	s.gatherData(path)
-	fmt.Println("here waiting for data to be read and transfered to channel.. ")
-	// fmt.Println("waiting for data to be recieved")
 
-	// wg.Wait()
-	// time.Sleep(10 * time.Second)
+	fmt.Println("Waiting for data to be recieved and close the channel")
 	<-recievedData
+
 	if readdataerr != nil {
 		return nil, readdataerr
 	}
-
 	return readdata, nil
 }
 
 func (s *FileServer) broadcastData(p *p2p.Payload) error {
-	fmt.Println("INDISE BROADCAST")
 	peers := []io.Writer{}
 	for _, peer := range s.peers {
 		peers = append(peers, peer)
 	}
+	// mw will create a single multiwriter encoder for all peers
 	mw := io.MultiWriter(peers...)
+	// Will encode the data in gob format and send over the network
 	if err := gob.NewEncoder(mw).Encode(p); err != nil {
 		return err
 	}
-	fmt.Println("outside BROADCAST")
 	return nil
 }
 func (s *FileServer) StoreData(path string, r io.Reader) error {
-	// 1. Store the file to disk
+	// 1. Store the file to requestor disk
 	// 2. Broadcast this file to all known peers in n/w
 
-	// copying the reader data because we need to consume twice,
+	// Copying the reader data because we need to consume twice,
 	// once to write in our disk and second to broadcast the data
-
 	buf := new(bytes.Buffer)
 	// _, err := io.Copy(buf, r)
 	// if err != nil {
@@ -206,16 +185,9 @@ func (s *FileServer) StoreData(path string, r io.Reader) error {
 		Path: path,
 		Data: buf.Bytes(),
 	}
-
-	// fmt.Println(buf.Bytes())
-	// fmt.Println(buf.String())
 	// fmt.Println("sending payload to remote node: ", p)
 	return s.broadcastData(p)
 }
 func (s *FileServer) StopSendingData() {
 	close(s.quitchannel)
 }
-
-// func (s *FileServer) CloseConn() error {
-// 	return s.transport.CloseConnection()
-// }

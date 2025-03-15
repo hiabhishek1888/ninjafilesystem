@@ -26,6 +26,8 @@ func CASPathTransformFunc(path string) (string, string) {
 	}
 	return strings.Join(paths, "/"), hashStr
 }
+
+// nowhere it is used..
 func PathTransformHandlerFunc(path string) string {
 	return path
 }
@@ -58,8 +60,8 @@ func (s *Store) deleteStream(filepath string) error {
 	fmt.Println("path name is \n", transformedFilePath)
 	fmt.Println("file name is \n", fileName)
 
-	// Delete only the file, not the directory/folder structure
-	// we need fullfilepath
+	// Delete only the file, not the directory/folder structure we need fullfilepath
+	//
 	// fullFilePath := transformedFilePath + "/" + fileName
 	// err := os.RemoveAll(fullFilePath)
 	// if err != nil {
@@ -69,8 +71,8 @@ func (s *Store) deleteStream(filepath string) error {
 	// fmt.Printf("File: %s, deleted successfully", filepath)
 	// return nil
 
-	// Delete whole folder and all its child folder and files
-	// we need root folder which is transformedfile- first part
+	//
+	// Delete whole folder and all its child folder and files we need root folder which is transformedfile- first part
 	rootFolder := strings.Split(transformedFilePath, "/")[0]
 	err := os.RemoveAll(rootFolder)
 	if err != nil {
@@ -98,7 +100,7 @@ func (s *Store) HasPath(addr string, filepath string) bool {
 
 func (s *Store) readStream(addr string, filepath string) (io.Reader, error) {
 
-	// checking if filepath exist
+	// Checking if filepath exist
 	// if !s.HasPath(addr, filepath) {
 	// 	err := errors.New("path do not exist")
 	// 	return nil, err
@@ -106,8 +108,6 @@ func (s *Store) readStream(addr string, filepath string) (io.Reader, error) {
 
 	transformedFilePath, fileName := s.PathTransform(filepath)
 	transformedFilePath = addr[1:] + "/" + transformedFilePath
-	// fmt.Println("path name is \n", transformedFilePath)
-	// fmt.Println("file name is \n", fileName)
 
 	fullFilePath := transformedFilePath + "/" + fileName
 	f, err := os.Open(fullFilePath)
@@ -133,13 +133,15 @@ func (s *Store) writeStream(addr string, filepath string, r io.Reader) error {
 		return err
 	}
 
-	// CANNOT DO BELOW ?? WHY ?
-	// BECAUSE we wont be able to find the file, when we need to read.
 	// TODO:
-	// but it is CAS feature.. no duplication.
+	// CAS feature support.. no duplication !!
 	// current implementation is overwriting the existing data if we give the same path
 	// but in CAS, it create a new file and leave the existing one as it is.
+	// RECOVERY => this supports to take snapshot and act as backup points if data is lost..
 
+	//
+	// CANNOT DO BELOW ?? WHY ?
+	// BECAUSE we wont be able to find the file, when we need to read because hash are not reversible
 	// buf := make([]byte(buffer))
 	// buf := new(bytes.Buffer)
 	// io.Copy(buf, r)
