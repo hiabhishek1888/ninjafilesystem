@@ -133,7 +133,7 @@ func (t *TCPTransport) HandleConnection(conn net.Conn, outbound bool) {
 		// fmt.Printf("payload is: %+v", p)
 		// fmt.Printf("payload path is: %+v", p.Path)
 
-		// 1. if payload only contains path, means it is for reading the data from this peer.
+		// 1. if payload only contains only path, means it is for reading the data from this peer.
 		// 2. else if payload contains both path and data, means it is to write the data to this peer.
 		if len(p.Data) == 0 {
 			t.pathChan <- p.Path

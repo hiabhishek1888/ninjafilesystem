@@ -35,6 +35,12 @@ var readdata io.Reader
 var readdataerr error
 var recievedData (chan bool)
 
+// This function is to detect if any path is recieved, so that it can return the data to requestor
+//
+// currently it not sending data back to requestor, here, 3 global variables are maintained which are fed with the same data directly and that variable are used in getData fxn returned to main..
+// which should be transported back to requestor over the network..
+// needs to be implemented correctly.
+
 func (s *FileServer) RecievePathAndReturnData() {
 	defer s.transport.CloseConnection()
 	for {
@@ -53,6 +59,7 @@ func (s *FileServer) RecievePathAndReturnData() {
 	}
 }
 
+// it will get data and store them in the disk.
 func (s *FileServer) RecieveDataAndStore() {
 	defer s.transport.CloseConnection()
 	for {
@@ -90,6 +97,8 @@ func (s *FileServer) StartConn(wg *sync.WaitGroup) error {
 	}()
 	if err := s.transport.ListenAndAccept(); err != nil {
 		return err
+		// try again to establish connection
+		// s.transport.ListenAndAccept()
 	}
 	s.bootstrapNetwork()
 	wg.Done()

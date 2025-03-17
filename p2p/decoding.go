@@ -18,6 +18,7 @@ func (dec GOBDecoder) Decode(r io.Reader, v any) error {
 
 type DefaultDecoder struct{}
 
+// Nowhere used !!
 func (dec DefaultDecoder) Decode(r io.Reader, msg *Payload) error {
 	// Read data from the connection
 	buffer := make([]byte, 1024) // Create a buffer to store incoming data

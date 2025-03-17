@@ -58,6 +58,9 @@ func (x *Encdec) cryptofunction() {
 	fmt.Println("Decrypted data:", string(decryptedData))
 }
 
+// Encrypt data using AES-256 => EncryptData takes raw data (of type []byte) and key (of type []byte) and encrypt the data with "nonce generated with key" using gcm and return the encrypted data (of type [byte]) and error.
+//
+// Read more: https://www.twilio.com/en-us/blog/encrypt-and-decrypt-data-in-go-with-aes-256
 func EncryptData(rawDataByte []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -75,11 +78,16 @@ func EncryptData(rawDataByte []byte, key []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	ciphertext := gcm.Seal(nonce, nonce, rawDataByte, nil)
-	fmt.Println("ciphertext is: ", ciphertext)
-	fmt.Println("ciphertext string is: ", hex.EncodeToString(ciphertext))
-	return ciphertext, nil
+	// encryptedDataByte is cipher text that is encrypted with "nonce generated with key" using gcm.
+	encryptedDataByte := gcm.Seal(nonce, nonce, rawDataByte, nil)
+	fmt.Println("cipherDataByte is: ", encryptedDataByte)
+	fmt.Println("cipherDataByte string is: ", hex.EncodeToString(encryptedDataByte))
+	return encryptedDataByte, nil
 }
+
+// Decrypt data using AES-256. => DecryptData takes encrypted data (of type []Byte) and key (of type []byte) and decrypt the encrypted data using gcm and nonce size and return the decrypted data (of type [] byte) and error
+//
+// Read more: https://www.twilio.com/en-us/blog/encrypt-and-decrypt-data-in-go-with-aes-256
 func DecryptData(encryptedDataByte []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -96,14 +104,14 @@ func DecryptData(encryptedDataByte []byte, key []byte) ([]byte, error) {
 		fmt.Println("error generating the nonce ", err)
 		return nil, err
 	}
-	decryptedData, err := gcm.Open(nil, encryptedDataByte[:gcm.NonceSize()], encryptedDataByte[gcm.NonceSize():], nil)
+	decryptedDataByte, err := gcm.Open(nil, encryptedDataByte[:gcm.NonceSize()], encryptedDataByte[gcm.NonceSize():], nil)
 	if err != nil {
 		fmt.Println("error decrypting data", err)
 		return nil, err
 	}
-	fmt.Println("Decrypted data:", decryptedData)
-	fmt.Println("Decrypted data in string is:", string(decryptedData))
-	return decryptedData, nil
+	fmt.Println("Decrypted data:", decryptedDataByte)
+	fmt.Println("Decrypted data in string is:", string(decryptedDataByte))
+	return decryptedDataByte, nil
 }
 
 func (x *Encdec) ExecuteCrypto() *Encdec {

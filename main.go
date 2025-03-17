@@ -8,6 +8,7 @@ import (
 	"github.com/intogit/ninjafilesystem/p2p"
 )
 
+// Create server with listen address and remote nodes (to be peers)
 func makeServer(listenAddr string, remoteNodes ...string) *FileServer {
 	tcpTransportOpts := p2p.TCPTransportOptions{
 		ListenAddress: listenAddr,
@@ -41,6 +42,8 @@ func main() {
 	s2 := makeServer(":4000", ":3000")
 	s3 := makeServer(":2000", ":3000", ":4000")
 
+	// adding wait group to wait untill all servers are starting up.
+	// TODO: There is no acknowledgement from the server if the connection was established or rejected. Wait should only end when connecton establishes successfully.
 	var wg sync.WaitGroup
 	wg.Add(3)
 	go s1.StartConn(&wg)

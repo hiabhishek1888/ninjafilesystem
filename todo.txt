@@ -1,15 +1,33 @@
 Basic implementation / fixes:
 
-1.	Run the binary file and try to transfer the data over network to other devices
-2. 	Format the codes to readable and add comments
 
-3.	Implement, when a device (publisher) broadcast the data to peers, implement a way to get acknowledgments from peers(subscribers)
-4.	Implement more robust & effecient pub-sub...
+2.	When, we request data from peers, we are sending the path to the peers and they are reading it from the disk and if they have it.. 
+	We have maintained a global variable `readdata` & `readdataerr` which is saving those data which is accessible to everyone
+	and automatically "GetData of requestor is executing and returning the readdata of peer" since we have added a channel to wait. 
+	
+	Ideally, this will not work when we have 2 actual machine trying to send and recieve data.. there won't be global data...
+	
+	Solution:
+	so it should be like, once data read from the peer, and if they have, peers should send the data to requestor 
+	by invoking 
+	conn, err := s.transport.Dial(addr)
+	handleConn(conn, false)
+	and then requestor should recieve the data.. and then there should be logic in handleConn if the data it recieved is the one it requested or one it needs to be find or one it needs to write to disk..
+	for this.. we can modify the payload.. it should have additional field.. Action which can be readdata, readpath, storedata.. something like it.. and then handleConn will handle the recieved data accordingly.
+	once it is readdata type.. call requestor `RecievePathAndReturnData` and then it will be good.
+
+3.	Inside main.go, when creating server, there is no acknowledgement from the server if the connection was established or rejected with peers. 
+	Currently, multiple times, all the server fails to establish connection at same time.
+	Wait should only end when all connecton establishes successfully.
+4.	Implement, when a device (publisher) broadcast the data to peers, implement a way to get acknowledgments from peers(subscribers)
+
+5.	Run the binary file and try to transfer the data over network to other devices
+6.	Implement more robust & effecient pub-sub...
 	a.	https://eli.thegreenplace.net/2020/pubsub-using-channels-in-go/
 	b.	https://nurcahyaari.medium.com/writing-simple-publisher-subscriber-in-golang-using-channel-18d97eb09666
 	c.	https://goscrapy.com.ar/post/how-to-write-a-pub-sub-service-with-go/
 
-5.	Implement handshake function when 2 peer connects
+7.	Implement handshake function when 2 peer connects
 
 
 
