@@ -25,6 +25,8 @@ The system architecture is a basic **Pub-Sub & Message Queue** pattern, where a 
 - **Message Queue**: Uses channels to manage data flow between Goroutines.
 
 ![20250317_144925](https://github.com/user-attachments/assets/47baf71e-cad5-4928-bf73-19ba6a8caac0)
+![ninjafilesystem1](https://github.com/user-attachments/assets/b1cf83c9-ad5e-427f-9a16-c417509d8e8f)
+
 
 
 ************************************************************************************************************************************************************************
