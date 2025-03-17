@@ -128,11 +128,6 @@ func (s *FileServer) GetData(path string) (io.Reader, error) {
 	// WAIT GROUP IS NOT WORKING INSIDE THE RecievePathAndReturnData
 
 	fmt.Println("GetData initiated for path ", path)
-	// initialising the global variables, helps to get the data and wait till data recieved
-	readdata = nil                 // recieve the data
-	readdataerr = nil              // recieve error, if any
-	recievedData = make(chan bool) // wait till data is consumed from channel and written to above vars.
-
 	// 1. checking file locally
 	addr := s.transport.TCPTransportOptions.ListenAddress
 	if s.store.HasPath(addr, path) {
@@ -141,15 +136,31 @@ func (s *FileServer) GetData(path string) (io.Reader, error) {
 	fmt.Printf("(%s) file do not exist locally, fetching from peer networks \n", path)
 
 	// 2. Requesting peers to share the file, if they have.
+
+	// initialising the global variables, helps to get the data and wait till data recieved
+	readdata = nil                 // recieve the data
+	readdataerr = nil              // recieve error, if any
+	recievedData = make(chan bool) // wait till data is consumed from channel and written to above vars.
+
 	s.gatherData(path)
 
-	fmt.Println("Waiting for data to be recieved and close the channel")
+	fmt.Println("Waiting for data to be recieved and close the -recievedData- channel")
 	<-recievedData
 
 	if readdataerr != nil {
 		return nil, readdataerr
 	}
-	return readdata, nil
+	// decrypting the data
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(readdata)
+	key := []byte("2o3n07oek5q58u293035wthumma1n61x")
+	decryptedData, err := DecryptData(buf.Bytes(), key)
+	if err != nil {
+		fmt.Println("could not decrypt the data")
+	}
+	fmt.Println("decrypted file:=> ", decryptedData)
+	// return readdata, nil
+	return bytes.NewReader(decryptedData), nil
 }
 
 func (s *FileServer) broadcastData(p *p2p.Payload) error {
@@ -181,9 +192,16 @@ func (s *FileServer) StoreData(path string, r io.Reader) error {
 	if err := s.store.Write(addr, path, tee); err != nil {
 		return err
 	}
+	// encrypt the data
+	key := []byte("2o3n07oek5q58u293035wthumma1n61x")
+	encryptedData, err := EncryptData(buf.Bytes(), key)
+	if err != nil {
+		fmt.Println("could not encrypt the data")
+	}
 	p := &p2p.Payload{
 		Path: path,
-		Data: buf.Bytes(),
+		// Data: buf.Bytes(),
+		Data: encryptedData,
 	}
 	// fmt.Println("sending payload to remote node: ", p)
 	return s.broadcastData(p)

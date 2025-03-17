@@ -1,10 +1,40 @@
-1.  implement handshake function when 2 peer connects                   [in p2p.handshakeandpeercheck]
+Basic implementation / fixes:
 
-2.  implement snapshot feature..                                        [in storage.go]
-    // TODO:
-	// CAS feature support.. no duplication !!
-	// current implementation is overwriting the existing data if we give the same path
-	// but in CAS, it create a new file and leave the existing one as it is.
-	// RECOVERY => this supports to take snapshot and act as backup points if data is lost..
+1.	Run the binary file and try to transfer the data over network to other devices
+2. 	Format the codes to readable and add comments
 
-3.  
+3.	Implement, when a device (publisher) broadcast the data to peers, implement a way to get acknowledgments from peers(subscribers)
+4.	Implement more robust & effecient pub-sub...
+	a.	https://eli.thegreenplace.net/2020/pubsub-using-channels-in-go/
+	b.	https://nurcahyaari.medium.com/writing-simple-publisher-subscriber-in-golang-using-channel-18d97eb09666
+	c.	https://goscrapy.com.ar/post/how-to-write-a-pub-sub-service-with-go/
+
+5.	Implement handshake function when 2 peer connects
+
+
+
+Features to be added:
+
+1.  Snapshot (Backup) feature
+	Current implementation: No backup
+	Challenge: Current implementation is overwriting the existing data if we try to modify the data. (path of data is same)
+	Solution 1: Create a brand new file with latest change and version it.
+	Solution 2: Keep the old file and keep track of changes and version the changes. 
+				If latest version is requested, merge all versions and send.. 
+				If specific version is requested, merge all versions till it is requested.
+	*Versions will be like snapshot and act as backup points if data is lost.
+
+2.  CHUNKING - Multipart Upload for large files
+3.	Check possibility of data transfer using gRPC
+4. 	Fully Secure Data transfer:
+	Current implementation: Plain Client side Encryption 
+	Challenge: 
+		1. It is not suitable for large file transfer 
+		2. do not prevent MITM attacks
+		3. Key managed by user only
+		4. require machine power to encrypt and decrypt files
+	Solution:
+		+ Client side Encryption 
+		+ TLS (prevent MITM) 
+		+ Multipart Upload (handle large file data transfer)
+		+ in-built KEY MANAGEMENT SYSTEM

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"sync"
 	"time"
@@ -57,11 +56,13 @@ func main() {
 
 	fmt.Println("can start store and get of data now..")
 
-	data1 := bytes.NewReader([]byte("this is small data file !!"))
-	s3.StoreData("myTempPath", data1)
-	data2 := bytes.NewReader([]byte("this is large data file !!"))
-	s2.StoreData("newTempfile", data2)
+	// data1 := bytes.NewReader([]byte("this is small data file !!"))
+	// s3.StoreData("myTempPath", data1)
+	// data2 := bytes.NewReader([]byte("this is large data file !!"))
+	// s2.StoreData("newTempfile", data2)
 
+	// fmt.Println("waiting for store to be completed")
+	// time.Sleep(20 * time.Second)
 	x, err := s2.GetData("newTempfile")
 	if err != nil {
 		fmt.Println(err)
