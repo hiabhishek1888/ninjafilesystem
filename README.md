@@ -1,6 +1,6 @@
-# Peer-to-Peer Distributed File Storage System
+# Peer-to-Peer Decentralized File Storage System
 ## Overview
-This project is a **Peer-to-Peer (P2P) Distributed File Storage System**, encrypted, decentralized file sharing(store, send, recieve and delete) among connected remote nodes (peers). 
+This project is a **Peer-to-Peer (P2P) Decentralized File Storage System**, encrypted, decentralized file sharing(store, send, recieve and delete) among connected remote nodes (peers). 
 It is built with **Go**, using its various features like **Concurrency**, **Goroutines**, **channels**, **mutex/locks**, **waitgroups**, **gob encoding** and **TCP connections** for efficient data transmission.
 The system architecture is a basic **Pub-Sub & Message Queue** pattern, where a device can broadcast data to its multiple connected peer (remote nodes) and consume data to read/store the data independently in real-time.
 
